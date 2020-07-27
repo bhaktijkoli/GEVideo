@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { View, Text } from 'react-native';
-import { Button } from './../../components';
+import { Button } from '../../components';
 import Geolocation from 'react-native-geolocation-service';
-import permission from './../../utils/permission';
+import permission from '../../utils/permission';
 
 class LocationRecordTest extends Component {
 
