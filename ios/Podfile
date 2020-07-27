@@ -10,6 +10,10 @@ target 'GEVideo' do
 
   pod 'react-native-camera', :path => '../node_modules/react-native-camera'
 
+  permissions_path = '../node_modules/react-native-permissions/ios'
+  pod 'Permission-LocationAlways', :path => "#{permissions_path}/LocationAlways.podspec"
+  pod 'Permission-LocationWhenInUse', :path => "#{permissions_path}/LocationWhenInUse.podspec"
+
   target 'GEVideoTests' do
     inherit! :complete
     # Pods for testing
