@@ -4,6 +4,8 @@ import { Button } from '../../components';
 import Geolocation from 'react-native-geolocation-service';
 import permission from '../../utils/permission';
 
+import MapView from './MapView';
+
 class LocationRecordTest extends Component {
 
     state = {
@@ -29,7 +31,7 @@ class LocationRecordTest extends Component {
                         <Button onPress={this.start}>Start</Button> :
                         <Button onPress={this.stop}>Stop</Button>
                 }
-
+                <MapView {...this.state} />
             </View>
         )
     }
