@@ -7,8 +7,11 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 export default (props) => {
 
     if (props.timerInterval === null) return null;
+    if (props.lat === 0 || props.lng === 0) return null;
 
     let [opacity, setOpacity] = useState(0);
+    let [lat, setLat] = useState(props.lat);
+    let [lng, setLng] = useState(props.lng);
 
     let onPressIn = () => {
         setOpacity(1)
