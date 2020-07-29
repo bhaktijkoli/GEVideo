@@ -3,8 +3,9 @@ import { View, Text } from 'react-native';
 import { Button } from '../../components';
 import Geolocation from 'react-native-geolocation-service';
 import permission from '../../utils/permission';
-
 import MapView from './MapView';
+import BackgroundTimer from 'react-native-background-timer';
+import { formatElapsed } from "../../utils/formatting"
 
 class LocationRecordTest extends Component {
 
@@ -16,43 +17,41 @@ class LocationRecordTest extends Component {
         elapsed: 0,
         timerInterval: null,
     }
-
+    timerInterval = null
     render() {
-        let { lat, lng, speed, heading, timerInterval } = this.state;
+        let { lat, lng, speed, elapsed, heading } = this.state;
         return (
             <View style={{ flex: 1, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 20 }}>Lat: {lat}</Text>
                 <Text style={{ fontSize: 20 }}>Lng: {lng}</Text>
                 <Text style={{ fontSize: 20 }}>speed: {speed}</Text>
                 <Text style={{ fontSize: 20 }}>heading: {heading}</Text>
-                <Text style={{ fontSize: 20 }}>elapsed: {this.formatElapsed()}</Text>
+                <Text style={{ fontSize: 20 }}>elapsed: {formatElapsed(elapsed)}</Text>
                 {
-                    timerInterval === null ?
-                        <Button onPress={this.start}>Start</Button> :
-                        <Button onPress={this.stop}>Stop</Button>
+                    this.timerInterval === null ? <Button onPress={this.start}>Start</Button> : <Button onPress={this.stop}>Stop</Button>
                 }
-                <MapView {...this.state} />
+                <MapView {...this.state} timerInterval={this.timerInterval} />
             </View>
         )
     }
-
+    componentWillUnmount() {
+        if (this.timerInterval !== null) {
+            BackgroundTimer.clearInterval(this.timerInterval);
+        }
+    }
     start = () => {
         permission.checkLocation().then(() => {
-
-            let timerInterval = setInterval(() => {
-                this.setState({ elapsed: this.state.elapsed + 1 })
-                Geolocation.getCurrentPosition(info => {
+            this.timerInterval = BackgroundTimer.setInterval(() => {
+                this.setState({elapsed: this.state.elapsed + 1});
+                Geolocation.getCurrentPosition((info) => {
                     this.setState({
                         lat: info.coords.latitude,
                         lng: info.coords.longitude,
                         speed: info.coords.speed,
                         heading: info.coords.heading,
-                    })
+                    });
                 });
-            }, 1000)
-
-            this.setState({ timerInterval })
-
+            }, 1000);
         })
             .catch(() => {
                 console.log("NO PERMISSION")
@@ -60,22 +59,11 @@ class LocationRecordTest extends Component {
     }
 
     stop = () => {
-        clearInterval(this.state.timerInterval);
-        this.setState({ timerInterval: null, elapsed: 0 });
-    }
-
-    formatElapsed = () => {
-        let { elapsed } = this.state;
-        let minutes = 0
-        while (elapsed > 60) {
-            minutes++;
-            elapsed -= 60;
+        if (this.timerInterval !== null) {
+            BackgroundTimer.clearInterval(this.timerInterval);
+            this.timerInterval = null
         }
-
-        if (minutes < 9) minutes = `0${minutes}`;
-        if (elapsed < 9) elapsed = `0${elapsed}`;
-
-        return `${minutes}:${elapsed}`
+        this.setState({ elapsed: 0 });
     }
 }
 

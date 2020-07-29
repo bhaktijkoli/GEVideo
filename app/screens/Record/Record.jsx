@@ -1,8 +1,11 @@
 import React, {Component} from 'react';
-import {Platform, StyleSheet, Alert, SafeAreaView, View, Text} from 'react-native';
+import {Platform, StyleSheet, Alert, SafeAreaView, View, Text, TouchableOpacity, Button} from 'react-native';
 import {RNCamera} from 'react-native-camera';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import _ from 'underscore';
+import BackgroundTimer from 'react-native-background-timer';
+import {Grid, Row, Col} from 'react-native-easy-grid';
+import {formatElapsed} from '../../utils/formatting';
 
 const styles = StyleSheet.create({
     container: {
@@ -25,12 +28,87 @@ const styles = StyleSheet.create({
         height: '100%',
         position: 'absolute',
     },
+    cameraLoading: {
+        flex: 1,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#5f5f5f',
+    },
+    cameraLoadingText: {
+        fontSize: 32,
+        color: '#fff',
+    },
     recordIcon: {
         flex: 1,
         alignSelf: 'center',
     },
     elapsed: {
         fontSize: 30,
+        color: '#fff',
+    },
+    cameraGrid: {
+        padding: 16,
+    },
+    backIcon: {
+        color: '#fff',
+        fontSize: 40,
+        borderRadius: 40,
+    },
+    topNav: {},
+    elapsedText: {
+        color: '#fff',
+        fontSize: 24,
+    },
+    backContainer: {},
+    settingsIcon: {
+        color: '#fff',
+        fontSize: 40,
+        backgroundColor: '#1f1f1f',
+        padding: 6,
+        borderRadius: 40,
+    },
+    settingsContainer: {
+        display: 'flex',
+        alignItems: 'flex-end',
+    },
+    pauseContainer: {
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        paddingHorizontal: 8,
+    },
+    pauseIcon: {
+        flex: 0,
+        backgroundColor: '#1f1f1f99',
+        fontSize: 60,
+        borderRadius: 50,
+        color: '#fff',
+    },
+    recordContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+    },
+    recordIcon: {
+        backgroundColor: '#1f1f1f99',
+        fontSize: 100,
+        borderRadius: 50,
+        color: '#fff',
+    },
+    mapContainer: {},
+    map: {
+        flex: 1,
+        backgroundColor: '#124dcc66',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    mapExpandIcon: {
+        fontSize: 28,
+        position: 'absolute',
+        top: 4,
+        right: 4,
         color: '#fff',
     },
 });
@@ -58,6 +136,8 @@ const getCameraType = (type) => {
     if (type === 'AVCaptureDeviceTypeBuiltInUltraWideCamera') return 'wide';
     return 'normal';
 };
+// BackgroundTimer.runBackgroundTimer(() => {
+// }, 3000);
 
 class Camera extends Component {
     constructor(props) {
@@ -71,18 +151,12 @@ class Camera extends Component {
             aspectRatio: parseRatio('4:3'),
             recording: false,
             capturing: false,
+            flashMode: 'off',
             elapsed: 0,
         };
     }
     componentDidMount() {
         this.mounted = true;
-        // TODO: Remove this, add buttons
-        setTimeout(() => {
-            this.startVideo();
-            setTimeout(() => {
-                this.stopVideo();
-            }, 5000);
-        }, 2000);
     }
     componentWillUnmount() {
         this.mounted = false;
@@ -109,7 +183,7 @@ class Camera extends Component {
                             }
                     }
                 } catch (error) {
-                    console.error('Failed to get camera ids', err.message || err);
+                    console.error('Failed to get camera ids', error.message || error);
                 }
                 ids = _.sortBy(ids, (v) => (v.type === CAMERA_FRONT ? 0 : 1));
                 this.setState({cameraIds: ids, cameraId: cameraId});
@@ -132,12 +206,12 @@ class Camera extends Component {
     };
     resetRecordingTimer() {
         if (this._recordingTimer) {
-            clearInterval(this._recordingTimer);
+            BackgroundTimer.clearInterval(this._recordingTimer);
             this.recordingTimer = null;
         }
+        this.setState({elapsed: 0});
     }
     startVideo = () => {
-        console.log('Started');
         if (this.camera && !this.state.recording) {
             this.state.recording = true;
 
@@ -150,7 +224,7 @@ class Camera extends Component {
                 try {
                     result = await this.camera.recordAsync(options);
                 } catch (error) {
-                    console.warn('Video record fail', err.message, err);
+                    console.warn('Video record fail', error.message, error);
                 }
                 if (result) {
                     Alert.alert('Video recorded', JSON.stringify(result));
@@ -162,8 +236,37 @@ class Camera extends Component {
             });
         }
     };
+    pauseTimer = () => {
+        if (this._recordingTimer) {
+            BackgroundTimer.clearInterval(this._recordingTimer);
+            this.recordingTimer = null;
+        }
+    };
+    resumeTimer = () => {
+        if (this.state.recording) {
+            this.setState({elapsed: 0});
+            this._recordingTimer = BackgroundTimer.setInterval(() => {
+                this.setState({elapsed: this.state.elapsed + 1});
+            }, 1000);
+        }
+    };
+    pauseVideo = () => {
+        if (this.camera && this.state.recording) {
+            const {cameraPaused} = this.state;
+            this.setState({cameraPaused: !cameraPaused}, async () => {
+                console.log(cameraPaused);
+                if (cameraPaused) {
+                    console.log('Resuming');
+                    this.camera.resumePreview();
+                    this.pauseTimer();
+                } else {
+                    console.log('Pausing');
+                    this.camera.pausePreview();
+                }
+            });
+        }
+    };
     stopVideo = () => {
-        console.log('Stopped');
         if (this.camera && this.state.recording) {
             this.camera.stopRecording();
         }
@@ -173,7 +276,7 @@ class Camera extends Component {
         this.resetRecordingTimer();
         if (this.state.recording) {
             this.setState({elapsed: 0});
-            this._recordingTimer = setInterval(() => {
+            this._recordingTimer = BackgroundTimer.setInterval(() => {
                 this.setState({elapsed: this.state.elapsed + 1});
             }, 1000);
         }
@@ -182,8 +285,31 @@ class Camera extends Component {
         this.reportRequestPrompt = true;
         this.resetRecordingTimer();
     };
+    handleStartRecording = () => {
+        // TODO: Add location recording in this method
+        this.startVideo();
+    };
+    handlePauseRecording = () => {
+        // TODO: Add location pause in this method
+        // TODO: Work on pause methods
+        // this.pauseVideo();
+    };
+    handleStopRecording = () => {
+        // TODO: Add location stop in this method
+        this.stopVideo();
+    };
+    handleClickSettings = () => {
+        if (!this.state.recording) console.log('Open settings');
+    };
+    handleClickBack = () => {
+        if (!this.state.recording) console.log('Go back');
+    };
+    handleFlash = (mode) => () => {
+        // TODO: It's for video, so we only need 'torch' & 'off'
+        this.setState({flashMode: mode});
+    };
     render() {
-        let {cameraId, cameraIds, elapsed, recording, cameraType} = this.state;
+        let {cameraId, cameraIds, elapsed, recording, cameraType, flashMode} = this.state;
         return (
             <View style={styles.container}>
                 <RNCamera
@@ -193,6 +319,7 @@ class Camera extends Component {
                     style={styles.camera}
                     type={cameraType}
                     cameraId={cameraId}
+                    flashMode={flashMode}
                     onRecordingStart={this.onRecordingStart}
                     onRecordingEnd={this.onRecordingEnd}
                     androidCameraPermissionOptions={{
@@ -213,27 +340,78 @@ class Camera extends Component {
                     useNativeZoom={true}
                     pendingAuthorizationView={
                         <SafeAreaView style={styles.cameraLoading}>
-                            <Text>Loading...</Text>
+                            <Text style={styles.cameraLoadingText}>Loading</Text>
                         </SafeAreaView>
                     }
                     notAuthorizedView={<View>{CameraNoPermissions}</View>}>
-                    <View style={styles.bottomControls}>
-                        {recording && (
-                            <View>
-                                {/* TODO: Formatting timer */}
-                                <Text style={styles.elapsed}>{elapsed !== -1 ? elapsed + 1 + 's' : 'Preparing...'}</Text>
-                            </View>
-                        )}
-                        {recording ? (
-                            <View style={styles.recordIcon}>
-                                <Icon name="stop-circle-outline" size={80} color="red" />
-                            </View>
-                        ) : (
-                            <View style={styles.recordIcon}>
-                                <Icon name="circle-outline" size={80} color="#fff" />
-                            </View>
-                        )}
-                    </View>
+                    <Grid style={styles.cameraGrid}>
+                        <Row size={14}>
+                            {recording ? (
+                                <Row>
+                                    <Col>
+                                        <Text style={styles.elapsedText}>
+                                            {elapsed > -1 ? formatElapsed(elapsed) : '00:00'}
+                                        </Text>
+                                    </Col>
+                                    <Col size={1} style={styles.settingsContainer}>
+                                        {/* TODO: Add dropdown instead of flash button */}
+                                        {flashMode === 'off' ? (
+                                            <Icon
+                                                name="flash-off"
+                                                style={styles.settingsIcon}
+                                                onPress={this.handleFlash('torch')}
+                                            />
+                                        ) : (
+                                            <Icon name="flash" style={styles.settingsIcon} onPress={this.handleFlash('off')} />
+                                        )}
+                                    </Col>
+                                </Row>
+                            ) : (
+                                <Row>
+                                    <Col size={1} style={styles.backContainer}>
+                                        <Icon name="arrow-left" style={styles.backIcon} onPress={this.handleClickBack} />
+                                    </Col>
+                                    <Col size={1} style={styles.settingsContainer}>
+                                        <Icon
+                                            name="cog-outline"
+                                            style={styles.settingsIcon}
+                                            onPress={this.handleClickSettings}
+                                        />
+                                    </Col>
+                                </Row>
+                            )}
+                        </Row>
+                        <Row size={5} style={{alignItems: 'center'}}>
+                            <Col size={2} style={styles.pauseContainer}>
+                                {recording && (
+                                    <Icon
+                                        name="pause-circle-outline"
+                                        style={styles.pauseIcon}
+                                        onPress={this.handlePauseRecording}
+                                    />
+                                )}
+                            </Col>
+                            <Col size={2} style={styles.recordContainer}>
+                                {recording ? (
+                                    <Icon
+                                        style={styles.recordIcon}
+                                        name="stop-circle-outline"
+                                        onPress={this.handleStopRecording}
+                                    />
+                                ) : (
+                                    <Icon style={styles.recordIcon} name="circle-outline" onPress={this.handleStartRecording} />
+                                )}
+                            </Col>
+                            <Col size={2} style={styles.mapContainer}>
+                                {recording && (
+                                    <View style={styles.map}>
+                                        <Icon name="arrow-expand" style={styles.mapExpandIcon} />
+                                        <Text style={{color: '#fff'}}> Map</Text>
+                                    </View>
+                                )}
+                            </Col>
+                        </Row>
+                    </Grid>
                 </RNCamera>
             </View>
         );
