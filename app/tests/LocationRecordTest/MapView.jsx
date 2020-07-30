@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import Draggable from 'react-native-draggable';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
@@ -9,19 +9,17 @@ export default (props) => {
     if (props.timerInterval === null) return null;
     if (props.lat === 0 || props.lng === 0) return null;
 
-    let [opacity, setOpacity] = useState(0);
-    let [lat, setLat] = useState(props.lat);
-    let [lng, setLng] = useState(props.lng);
+    const [lat, setLat] = useState(props.lat);
+    const [lng, setLng] = useState(props.lng);
 
-    let onPressIn = () => {
-        setOpacity(1)
-        setTimeout(() => {
-            setOpacity(0)
-        }, 3000)
+    const markerRef = useRef(null);
+
+    if (lat !== props.lat || lng !== props.lng) {
+        markerRef.current.animateMarkerToCoordinate({ latitude: props.lat, longitude: props.lng })
     }
 
     return (
-        <Draggable x={10} y={10} onPressIn={onPressIn}>
+        <Draggable x={10} y={10}>
             <View style={{ height: 200, width: 160 }}>
                 <MapView
                     provider={PROVIDER_GOOGLE}
@@ -32,19 +30,16 @@ export default (props) => {
                         latitudeDelta: 0.015,
                         longitudeDelta: 0.0121,
                     }}
+                    zoomEnabled={true}
                 >
                     <Marker
+                        ref={markerRef}
                         coordinate={{
-                            latitude: props.lat,
-                            longitude: props.lng
+                            latitude: lat,
+                            longitude: lng
                         }}
                     />
                 </MapView>
-                <View style={{ position: 'absolute', backgroundColor: '#0000003b', height: '100%', width: '100%', alignItems: 'center', justifyContent: 'center', opacity }}>
-                    <TouchableOpacity>
-                        <Icon name="arrow-expand-all" size={30} color={'#fff'} />
-                    </TouchableOpacity>
-                </View>
             </View>
         </Draggable>
     )
