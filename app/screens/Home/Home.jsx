@@ -1,17 +1,18 @@
-import React, {Component} from 'react';
-import {View, Text} from 'react-native';
-import {Button} from '../../components';
+import React, { Component } from 'react';
+import { View, Text } from 'react-native';
+import { Toolbar } from '../../components';
+import Fab from './Fab';
 
 class Home extends Component {
     render() {
         return (
-            <View>
-                <Text>Home Screen</Text>
-                <Button
-                    onPress={(e) => this.props.navigation.navigate('Record')}>
-                    Record
-                </Button>
-            </View>
+            <React.Fragment>
+                <Toolbar />
+                <View>
+                    <Text>Home Screen</Text>
+                </View>
+                <Fab />
+            </React.Fragment>
         );
     }
 }
