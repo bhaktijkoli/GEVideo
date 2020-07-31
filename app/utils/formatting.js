@@ -1,5 +1,6 @@
 module.exports = {
     formatElapsed: (elapsed) => {
+        if (elapsed <= 0) return "00:00";
         let minutes = 0;
         while (elapsed > 59) {
             minutes++;

@@ -1,11 +1,12 @@
-import React, {Component} from 'react';
-import {Platform, StyleSheet, Alert, SafeAreaView, View, Text, TouchableOpacity, Button} from 'react-native';
-import {RNCamera} from 'react-native-camera';
+import React, { Component } from 'react';
+import { Platform, StyleSheet, Alert, SafeAreaView, View, Text, TouchableOpacity, Button } from 'react-native';
+import { RNCamera } from 'react-native-camera';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import _ from 'underscore';
 import BackgroundTimer from 'react-native-background-timer';
-import {Grid, Row, Col} from 'react-native-easy-grid';
-import {formatElapsed} from '../../utils/formatting';
+import { Grid, Row, Col } from 'react-native-easy-grid';
+import MainControls from './MainControls';
+import SideControls from './SideControls';
 
 const styles = StyleSheet.create({
     container: {
@@ -165,7 +166,7 @@ class Camera extends Component {
     onCameraStatusChange = (s) => {
         if (s.cameraStatus === 'READY') {
             let audioDisabled = s.recordAudioPermissionStatus === 'NOT_AUTHORIZED';
-            this.setState({audioDisabled: audioDisabled}, async () => {
+            this.setState({ audioDisabled: audioDisabled }, async () => {
                 let ids = [];
                 let cameraId = null;
                 try {
@@ -186,17 +187,17 @@ class Camera extends Component {
                     console.error('Failed to get camera ids', error.message || error);
                 }
                 ids = _.sortBy(ids, (v) => (v.type === CAMERA_FRONT ? 0 : 1));
-                this.setState({cameraIds: ids, cameraId: cameraId});
+                this.setState({ cameraIds: ids, cameraId: cameraId });
             });
         } else {
             if (this.state.cameraReady) {
-                this.setState({cameraReady: false});
+                this.setState({ cameraReady: false });
             }
         }
     };
     onCameraReady = () => {
         if (!this.state.cameraReady) {
-            this.setState({cameraReady: true});
+            this.setState({ cameraReady: true });
         }
     };
     onCameraMountError = () => {
@@ -209,7 +210,7 @@ class Camera extends Component {
             BackgroundTimer.clearInterval(this._recordingTimer);
             this.recordingTimer = null;
         }
-        this.setState({elapsed: 0});
+        this.setState({ elapsed: 0 });
     }
     startVideo = () => {
         if (this.camera && !this.state.recording) {
@@ -219,7 +220,7 @@ class Camera extends Component {
             const options = {
                 quality: '720p',
             };
-            this.setState({recording: true, elapsed: -1}, async () => {
+            this.setState({ recording: true, elapsed: -1 }, async () => {
                 let result = null;
                 try {
                     result = await this.camera.recordAsync(options);
@@ -230,7 +231,7 @@ class Camera extends Component {
                     Alert.alert('Video recorded', JSON.stringify(result));
                 }
                 setTimeout(() => {
-                    this.setState({recording: false});
+                    this.setState({ recording: false });
                 }, 500);
                 this.resetRecordingTimer();
             });
@@ -244,16 +245,16 @@ class Camera extends Component {
     };
     resumeTimer = () => {
         if (this.state.recording) {
-            this.setState({elapsed: 0});
+            this.setState({ elapsed: 0 });
             this._recordingTimer = BackgroundTimer.setInterval(() => {
-                this.setState({elapsed: this.state.elapsed + 1});
+                this.setState({ elapsed: this.state.elapsed + 1 });
             }, 1000);
         }
     };
     pauseVideo = () => {
         if (this.camera && this.state.recording) {
-            const {cameraPaused} = this.state;
-            this.setState({cameraPaused: !cameraPaused}, async () => {
+            const { cameraPaused } = this.state;
+            this.setState({ cameraPaused: !cameraPaused }, async () => {
                 console.log(cameraPaused);
                 if (cameraPaused) {
                     console.log('Resuming');
@@ -275,9 +276,9 @@ class Camera extends Component {
         this.reportRequestPrompt = true;
         this.resetRecordingTimer();
         if (this.state.recording) {
-            this.setState({elapsed: 0});
+            this.setState({ elapsed: 0 });
             this._recordingTimer = BackgroundTimer.setInterval(() => {
-                this.setState({elapsed: this.state.elapsed + 1});
+                this.setState({ elapsed: this.state.elapsed + 1 });
             }, 1000);
         }
     };
@@ -304,12 +305,11 @@ class Camera extends Component {
     handleClickBack = () => {
         if (!this.state.recording) console.log('Go back');
     };
-    handleFlash = (mode) => () => {
-        // TODO: It's for video, so we only need 'torch' & 'off'
-        this.setState({flashMode: mode});
-    };
+    handleFlash = (mode) => {
+        this.setState({ flashMode: mode });
+    }
     render() {
-        let {cameraId, cameraIds, elapsed, recording, cameraType, flashMode} = this.state;
+        let { cameraId, cameraIds, elapsed, recording, cameraType, flashMode } = this.state;
         return (
             <View style={styles.container}>
                 <RNCamera
@@ -344,74 +344,9 @@ class Camera extends Component {
                         </SafeAreaView>
                     }
                     notAuthorizedView={<View>{CameraNoPermissions}</View>}>
-                    <Grid style={styles.cameraGrid}>
-                        <Row size={14}>
-                            {recording ? (
-                                <Row>
-                                    <Col>
-                                        <Text style={styles.elapsedText}>
-                                            {elapsed > -1 ? formatElapsed(elapsed) : '00:00'}
-                                        </Text>
-                                    </Col>
-                                    <Col size={1} style={styles.settingsContainer}>
-                                        {/* TODO: Add dropdown instead of flash button */}
-                                        {flashMode === 'off' ? (
-                                            <Icon
-                                                name="flash-off"
-                                                style={styles.settingsIcon}
-                                                onPress={this.handleFlash('torch')}
-                                            />
-                                        ) : (
-                                            <Icon name="flash" style={styles.settingsIcon} onPress={this.handleFlash('off')} />
-                                        )}
-                                    </Col>
-                                </Row>
-                            ) : (
-                                <Row>
-                                    <Col size={1} style={styles.backContainer}>
-                                        <Icon name="arrow-left" style={styles.backIcon} onPress={this.handleClickBack} />
-                                    </Col>
-                                    <Col size={1} style={styles.settingsContainer}>
-                                        <Icon
-                                            name="cog-outline"
-                                            style={styles.settingsIcon}
-                                            onPress={this.handleClickSettings}
-                                        />
-                                    </Col>
-                                </Row>
-                            )}
-                        </Row>
-                        <Row size={5} style={{alignItems: 'center'}}>
-                            <Col size={2} style={styles.pauseContainer}>
-                                {recording && (
-                                    <Icon
-                                        name="pause-circle-outline"
-                                        style={styles.pauseIcon}
-                                        onPress={this.handlePauseRecording}
-                                    />
-                                )}
-                            </Col>
-                            <Col size={2} style={styles.recordContainer}>
-                                {recording ? (
-                                    <Icon
-                                        style={styles.recordIcon}
-                                        name="stop-circle-outline"
-                                        onPress={this.handleStopRecording}
-                                    />
-                                ) : (
-                                    <Icon style={styles.recordIcon} name="circle-outline" onPress={this.handleStartRecording} />
-                                )}
-                            </Col>
-                            <Col size={2} style={styles.mapContainer}>
-                                {recording && (
-                                    <View style={styles.map}>
-                                        <Icon name="arrow-expand" style={styles.mapExpandIcon} />
-                                        <Text style={{color: '#fff'}}> Map</Text>
-                                    </View>
-                                )}
-                            </Col>
-                        </Row>
-                    </Grid>
+                    <SideControls onFlashToggle={this.handleFlash} {...this.state} />
+                    <MainControls onStartRecord={this.handleStartRecording} onStopRecord={this.handleStopRecording} {...this.state} />
+
                 </RNCamera>
             </View>
         );
@@ -419,9 +354,24 @@ class Camera extends Component {
 }
 
 class Record extends Component {
+    state = {
+        loaded: false,
+    }
+    componentDidMount() {
+        setTimeout(() => {
+            this.setState({ loaded: true });
+        }, 100)
+    }
     render() {
+        if (this.state.loaded === false) {
+            return (
+                <View style={{ flex: 1, backgroundColor: '#000' }}>
+
+                </View>
+            )
+        }
         return (
-            <View style={{flex: 1}}>
+            <View style={{ flex: 1 }}>
                 <Camera />
             </View>
         );
