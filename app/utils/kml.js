@@ -1,6 +1,6 @@
 import xml2js from 'react-native-xml2js'
 
-module.exports.addPlacemark = (name, lat, lng, alt) => {
+const formatPlacemark = (name, lat, lng, alt) => {
     return {
         "name": [
             name
@@ -46,7 +46,14 @@ module.exports.addPlacemark = (name, lat, lng, alt) => {
     }
 }
 
-module.exports.kmlDocument = () => {
+module.exports.kmlDocument = (locations) => {
+
+    let placemarks = [];
+
+    locations.forEach((location, key) => {
+        placemarks.push(formatPlacemark(key, location.lat, location.lng, location.alt));
+    });
+
     let kml = {
         "kml": {
             "$": {
@@ -61,6 +68,7 @@ module.exports.kmlDocument = () => {
                         "Test"
                     ],
                     "Placemark": [
+                        placemarks,
                     ],
                 }
             ],

@@ -8,6 +8,9 @@ import BackgroundTimer from 'react-native-background-timer';
 import moment from 'moment';
 import MainControls from './MainControls';
 import SideControls from './SideControls';
+import RNFS from 'react-native-fs';
+import kml from './../../utils/kml';
+import directory from './../../utils/directory';
 
 const styles = StyleSheet.create({
     container: {
@@ -147,7 +150,7 @@ class Camera extends Component {
         if (this.camera && !this.state.recording) {
             this.state.recording = true;
 
-            // TODO: Decide quality
+            // TODO: More Options
             const options = {
                 quality: '720p',
             };
@@ -159,6 +162,10 @@ class Camera extends Component {
                     console.warn('Video record fail', error.message, error);
                 }
                 if (result) {
+                    let file = result.uri.replace('file://', '');
+                    let dest = directory.path("GE" + moment().format('YYMMDDHHmmss') + '.mp4');
+                    RNFS.copyFile(file, dest)
+                    RNFS.writeFile(dest + ".kml", kml.kmlDocument(this.state.locations))
                     Alert.alert('Video recorded', JSON.stringify(result));
                 }
                 setTimeout(() => {
@@ -308,6 +315,7 @@ class Record extends Component {
         loaded: false,
     }
     componentDidMount() {
+        console.log(RNFS.ExternalDirectoryPath)
         setTimeout(() => {
             this.setState({ loaded: true });
         }, 100)
