@@ -3,8 +3,9 @@ import { Platform, StyleSheet, Alert, SafeAreaView, View, Text, TouchableOpacity
 import { RNCamera } from 'react-native-camera';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import _ from 'underscore';
+import Geolocation from 'react-native-geolocation-service';
 import BackgroundTimer from 'react-native-background-timer';
-import { Grid, Row, Col } from 'react-native-easy-grid';
+import moment from 'moment';
 import MainControls from './MainControls';
 import SideControls from './SideControls';
 
@@ -154,6 +155,8 @@ class Camera extends Component {
             capturing: false,
             flashMode: 'off',
             elapsed: 0,
+            startTime: null,
+            locations: [],
         };
     }
     componentDidMount() {
@@ -276,9 +279,28 @@ class Camera extends Component {
         this.reportRequestPrompt = true;
         this.resetRecordingTimer();
         if (this.state.recording) {
-            this.setState({ elapsed: 0 });
+            this.setState({ elapsed: 0, startTime: moment(), locations: [] });
             this._recordingTimer = BackgroundTimer.setInterval(() => {
-                this.setState({ elapsed: this.state.elapsed + 1 });
+                this.setState({ elapsed: moment().diff(this.state.startTime, 'seconds') });
+
+                Geolocation.getCurrentPosition(
+                    info => {
+                        let { locations } = this.state
+                        locations.push({
+                            alt: info.coords.altitude,
+                            lat: info.coords.latitude,
+                            lng: info.coords.longitude,
+                            speed: info.coords.speed,
+                            heading: info.coords.heading,
+                        })
+                        this.setState({ locations });
+                    },
+                    error => {
+                        console.log(error)
+                    },
+                    { enableHighAccuracy: true }
+                );
+
             }, 1000);
         }
     };
