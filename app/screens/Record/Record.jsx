@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { Platform, StyleSheet, Alert, SafeAreaView, View, Text, TouchableOpacity, Button } from 'react-native';
 import { RNCamera } from 'react-native-camera';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import _ from 'underscore';
 import Geolocation from 'react-native-geolocation-service';
 import BackgroundTimer from 'react-native-background-timer';
@@ -55,10 +54,6 @@ const CameraNoPermissions = (
     </Text>
 );
 
-const icons = {
-    record: <Icon name="record" size={60} color={'#fff'} />,
-};
-
 const parseRatio = (str) => {
     let [p1, p2] = str.split(':').map((s) => parseInt(s));
     return p1 / p2;
@@ -69,10 +64,8 @@ const getCameraType = (type) => {
     if (type === 'AVCaptureDeviceTypeBuiltInUltraWideCamera') return 'wide';
     return 'normal';
 };
-// BackgroundTimer.runBackgroundTimer(() => {
-// }, 3000);
 
-class Camera extends Component {
+class Record extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -256,9 +249,6 @@ class Camera extends Component {
         // TODO: Add location stop in this method
         this.stopVideo();
     };
-    handleClickSettings = () => {
-        if (!this.state.recording) console.log('Open settings');
-    };
     handleClickBack = () => {
         if (!this.state.recording) console.log('Go back');
     };
@@ -266,7 +256,7 @@ class Camera extends Component {
         this.setState({ flashMode: mode });
     }
     render() {
-        let { cameraId, cameraIds, elapsed, recording, cameraType, flashMode } = this.state;
+        let { cameraId, cameraType, flashMode } = this.state;
         return (
             <View style={styles.container}>
                 <RNCamera
@@ -305,32 +295,6 @@ class Camera extends Component {
                     <MainControls onStartRecord={this.handleStartRecording} onStopRecord={this.handleStopRecording} {...this.state} />
 
                 </RNCamera>
-            </View>
-        );
-    }
-}
-
-class Record extends Component {
-    state = {
-        loaded: false,
-    }
-    componentDidMount() {
-        console.log(RNFS.ExternalDirectoryPath)
-        setTimeout(() => {
-            this.setState({ loaded: true });
-        }, 100)
-    }
-    render() {
-        if (this.state.loaded === false) {
-            return (
-                <View style={{ flex: 1, backgroundColor: '#000' }}>
-
-                </View>
-            )
-        }
-        return (
-            <View style={{ flex: 1 }}>
-                <Camera />
             </View>
         );
     }

@@ -13,6 +13,29 @@ module.exports.Location = () => {
 module.exports.writeStorage = () => {
     if (Platform.OS === 'android') {
         return checkPermission(PERMISSIONS.ANDROID.WRITE_EXTERNAL_STORAGE)
+    } else if (Platform.OS === 'ios') {
+        return checkPermission(PERMISSIONS.IOS.MEDIA_LIBRARY)
+    }
+}
+
+module.exports.readStorage = () => {
+    if (Platform.OS === 'android') {
+        return checkPermission(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE)
+    } else if (Platform.OS === 'ios') {
+    }
+}
+
+module.exports.camera = () => {
+    if (Platform.OS === 'android') {
+        return checkPermission(PERMISSIONS.ANDROID.RECORD_AUDIO)
+    } else if (Platform.OS === 'ios') {
+        return checkPermission(PERMISSIONS.IOS.CAMERA)
+    }
+}
+
+module.exports.audio = () => {
+    if (Platform.OS === 'android') {
+        return checkPermission(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE)
 
     } else if (Platform.OS === 'ios') {
     }
@@ -25,7 +48,6 @@ const checkPermission = (permissionId) => {
             if (permission !== RESULTS.GRANTED) {
                 permission = await request(permissionId);
                 if (permission !== RESULTS.GRANTED) {
-                    print("REJECT");
                     return reject();
                 }
             }
